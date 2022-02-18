@@ -48,11 +48,9 @@ int main(int argc, char *argv[]) {
 	char** seq2 = readFromFile(file_name, &weights[0], &seq1[0], &num_of_seq2);
 	
 	/* calculate number of mutants and create mutants array */
-	int num_of_mutants = (strlen(seq2[0]) * (strlen(seq2[0]) - 1)) / 2;
 	int counter = 0;
-	//printf("SEQ2 len = %d, Number of mutants = %d\n", (int)strlen(seq2[0]), num_of_mutants);
+	int num_of_mutants = (strlen(seq2[0]) * (strlen(seq2[0]) - 1)) / 2;
 	mutant mutants[num_of_mutants];
-	
 	for(i = 1; i < strlen(seq2[0]); i++){
 		for(j = i+1; j < strlen(seq2[0]) + 1; j++){
 			printf("(%d,%d) ", i, j);
@@ -62,20 +60,16 @@ int main(int argc, char *argv[]) {
 		}
 		printf("\n");
 	}
-	counter = 0;
-	for(i = 1; i < strlen(seq2[0]); i++){
-		for(j = i+1; j < strlen(seq2[0]) + 1; j++){
-			printf("(%d,%d) ", mutants[counter].m, mutants[counter].n);
-		}
-		printf("\n");
-	}
-	
+		
 	/* calculating the best score of seq2 */
 	for(i = 0; i < num_of_seq2; i++){
 		int len = strlen(seq2[i]);
-		char* mutant1 = get_Mutant(seq2[i], len, 1, 2);
-		printf("Mutant is = %s\n", mutant1);
-		//calc_best_score(seq1, mutant1, weights);
+		printf("i = %d\n", i);
+		for(j = 0; j < num_of_mutants; j++){
+			char* tmp_mutant = get_Mutant(seq2[i], len, mutants[j].m, mutants[j].n);
+			printf("Mutant is = %s\n", tmp_mutant);
+			//calc_best_score(seq1, tmp_mutant, weights);
+		}
 	}	
 	
 	/*
@@ -191,13 +185,12 @@ char* get_Mutant(char* sequence,int len, int m, int n){
 	int f_index = m - 1;
 	int e_index = n - 1;
 	char* mutant = (char*)malloc((len-2) * sizeof(char));
-	for(i = 0; i< len; i++){
-		if(i == f_index || i == e_index){
-			i++;
-		}else{
+	for(i = 0; i < len; i++){
+		if(i != f_index && i != e_index){
 			mutant[j] = sequence[i];
 			j++;
 		}
 	}
+	printf("len = %d, j =%d\n", len, j);
 	return mutant;
 }
