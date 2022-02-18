@@ -53,8 +53,18 @@ int main(int argc, char *argv[]) {
 	//printf("SEQ2 len = %d, Number of mutants = %d\n", (int)strlen(seq2[0]), num_of_mutants);
 	mutant mutants[num_of_mutants];
 	
-	for(i = 1; i <= strlen(seq2[0]); i++){
-		for(j = i+1; j <= strlen(seq2[0]) + 1; j++){
+	for(i = 1; i < strlen(seq2[0]); i++){
+		for(j = i+1; j < strlen(seq2[0]) + 1; j++){
+			printf("(%d,%d) ", i, j);
+			mutants[counter].m = i;
+			mutants[counter].n = j;
+			counter += 1;
+		}
+		printf("\n");
+	}
+	counter = 0;
+	for(i = 1; i < strlen(seq2[0]); i++){
+		for(j = i+1; j < strlen(seq2[0]) + 1; j++){
 			printf("(%d,%d) ", i, j);
 			mutants[counter].m = i;
 			mutants[counter].n = j;
