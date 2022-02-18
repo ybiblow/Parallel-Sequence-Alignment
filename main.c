@@ -16,6 +16,13 @@ float calc_score(char* arr, int size, float* weights);
 void calc_num_of_occurrences(char* arr, int size, int* counter, char chr);
 char* get_Mutant(char* sequence,int len, int m, int n);
 
+struct Mutant{
+	int m;
+	int n;
+	int offset;
+	float score;
+}mutant;
+
 int main(int argc, char *argv[]) {
     
     int size, my_rank;
