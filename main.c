@@ -65,10 +65,7 @@ int main(int argc, char *argv[]) {
 	counter = 0;
 	for(i = 1; i < strlen(seq2[0]); i++){
 		for(j = i+1; j < strlen(seq2[0]) + 1; j++){
-			printf("(%d,%d) ", i, j);
-			mutants[counter].m = i;
-			mutants[counter].n = j;
-			counter += 1;
+			printf("(%d,%d) ", mutants[counter].m, mutants[counter].n);
 		}
 		printf("\n");
 	}
