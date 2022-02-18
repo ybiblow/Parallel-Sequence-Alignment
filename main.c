@@ -16,7 +16,7 @@ float calc_score(char* arr, int size, float* weights);
 void calc_num_of_occurrences(char* arr, int size, int* counter, char chr);
 char* get_Mutant(char* sequence,int len, int m, int n);
 
-struct Mutant{
+typedef struct Mutant{
 	int m;
 	int n;
 	int offset;
@@ -42,17 +42,33 @@ int main(int argc, char *argv[]) {
 	printf("my rank is %d and i'm currently reading from the file\n", my_rank);
 	/* setting variables to read from input file */
 	char* file_name = (char*)FILE_NAME;
-	int num_of_seq2, i;
+	int num_of_seq2, i, j;
 	float weights[4];
 	char seq1[5000];
 	char** seq2 = readFromFile(file_name, &weights[0], &seq1[0], &num_of_seq2);
 	
+	/* calculate number of mutants and create mutants array */
+	int num_of_mutants = (strlen(seq2[0]) * (strlen(seq2[0]) - 1)) / 2;
+	int counter = 0;
+	//printf("SEQ2 len = %d, Number of mutants = %d\n", (int)strlen(seq2[0]), num_of_mutants);
+	mutant mutants[num_of_mutants];
+	
+	for(i = 1; i <= strlen(seq2[0]); i++){
+		for(j = i+1; j <= strlen(seq2[0]) + 1; j++){
+			printf("(%d,%d) ", i, j);
+			mutants[counter].m = i;
+			mutants[counter].n = j;
+			counter += 1;
+		}
+		printf("\n");
+	}
+	
 	/* calculating the best score of seq2 */
 	for(i = 0; i < num_of_seq2; i++){
 		int len = strlen(seq2[i]);
-		char* mutant = get_Mutant(seq2[i], len, 1, 2);
-		printf("Mutant is = %s\n", mutant);
-		calc_best_score(seq1, mutant, weights);
+		char* mutant1 = get_Mutant(seq2[i], len, 1, 2);
+		printf("Mutant is = %s\n", mutant1);
+		//calc_best_score(seq1, mutant1, weights);
 	}	
 	
 	/*
