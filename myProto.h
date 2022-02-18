@@ -1,7 +1,7 @@
 #pragma once
 
 #define PART  100
-#define FILE_NAME "input1.txt"
+#define FILE_NAME "input2.txt"
 #define SEQ1_LENGTH 5000
 #define SEQ2_LENGTH 3000
 #define NUMBER_OF_WEIGHTS 4

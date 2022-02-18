@@ -11,7 +11,7 @@ void print_char_array(char* arr, int size);
 int is_identical(char a, char b);
 int is_conservative(char a, char b);
 int is_semi_conservative(char a, char b);
-void calc_best_score(char* seq1, char* seq2, float* weights);
+void calc_best_score(char* seq1, char* seq2, float* weights,int* best_offset, float* best_score);
 float calc_score(char* arr, int size, float* weights);
 void calc_num_of_occurrences(char* arr, int size, int* counter, char chr);
 char* get_Mutant(char* sequence,int len, int m, int n);
@@ -66,11 +66,19 @@ int main(int argc, char *argv[]) {
 		int len = strlen(seq2[i]);
 		printf("i = %d\n", i);
 		for(j = 0; j < num_of_mutants; j++){
+			int offset;
+			float score;
 			char* tmp_mutant = get_Mutant(seq2[i], len, mutants[j].m, mutants[j].n);
 			printf("Mutant is = %s\n", tmp_mutant);
-			//calc_best_score(seq1, tmp_mutant, weights);
+			calc_best_score(seq1, tmp_mutant, weights, &offset, &score);
+			mutants[j].score = score;
+			mutants[j].offset = offset;
 		}
-	}	
+	}
+	
+	for(i = 0; i < num_of_mutants; i++){
+		printf("mutant (%d,%d) offset = %d score %f\n", mutants[i].m, mutants[i].n, mutants[i].offset, mutants[i].score);
+	}
 	
 	/*
 	#pragma omp parallel
@@ -97,20 +105,21 @@ void print_char_array(char* arr, int size){
 	printf("\n");	
 }
 
-void calc_best_score(char* seq1, char* seq2, float* weights){
+void calc_best_score(char* seq1, char* seq2, float* weights,int* best_offset, float* best_score){
 	int i;
 	int offset = strlen(seq1) - strlen(seq2);
-	int best_score = 0, tmp_score, best_offset;
+	int tmp_score;
+	*best_score = 0;
 	printf("offset = %d\n", offset);
 	for(i = 0; i <= offset; i++){
 		tmp_score = calc_score(calc_similarity(seq1, seq2, i), strlen(seq2), weights);
-		if(tmp_score > best_score){
-			best_score = tmp_score;
-			best_offset = i;
+		if(tmp_score > *best_score){
+			*best_score = tmp_score;
+			*best_offset = i;
 		}
 	}
-	printf("Best offset is: %d\n", best_offset);
-
+	printf("Best offset is: %d\n", *best_offset);
+	
 }
 
 float calc_score(char* arr, int size, float* weights){
@@ -191,6 +200,7 @@ char* get_Mutant(char* sequence,int len, int m, int n){
 			j++;
 		}
 	}
-	printf("len = %d, j =%d\n", len, j);
+	mutant[j] = '\0';
+	printf("len = %d, j =%d, mutant len = %d\n", len, j, (int)strlen(mutant));
 	return mutant;
 }
