@@ -53,22 +53,16 @@ int main(int argc, char *argv[]) {
 	char* input_file_name = (char*)INPUT_FILE_NAME;
 	char* output_file_name = (char*)OUTPUT_FILE_NAME;
 	char** seq2 = readFromFile(input_file_name, &weights[0], &seq1[0], &num_of_seq2);
-	
-	/* calculate number of mutants and create mutants array */
-	mutant** mutants = (mutant**)malloc(num_of_seq2 * sizeof(mutant*));
-	
+	int length, tmp_m, tmp_n;
 	FILE* output_file = fopen(output_file_name, "w");
-		if(output_file == NULL){
-			printf("Error in opening the file\n");
-			exit(1);
-		}
+	if(output_file == NULL){
+		printf("Error in opening the file\n");
+		exit(1);
+	}
+	
 	best_offset = -1;
 	best_score = -1;
-	int length;
 	length = strlen(seq1);
-	
-	int tmp_m;
-	int tmp_n;
 	
 	// send seq1 length
 	MPI_Send(&length, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
@@ -109,7 +103,8 @@ int main(int argc, char *argv[]) {
 						best_offset = offset;
 						m = j;
 						n = k;
-					}	
+					}
+					free(tmp_mutant);
 				}
 				counter++;				
 			}
@@ -126,6 +121,7 @@ int main(int argc, char *argv[]) {
 			n = tmp_n;
 		}
 		writeToFile(output_file, output_file_name, m, n, best_offset, best_score);
+		printf("finished finding best mutant for seq2_%d\n", i);
 	}
 	fclose(output_file);
 	
@@ -178,6 +174,8 @@ int main(int argc, char *argv[]) {
 						m = j;
 						n = k;
 					}
+					printf("seq2_%d, mutant number = %d out of %d\n", i, counter, num_of_mutants);
+					free(tmp_mutant);
 				}
 				counter++;
 			}
@@ -187,8 +185,10 @@ int main(int argc, char *argv[]) {
 		MPI_Send(&best_offset, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
 		MPI_Send(&m, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
 		MPI_Send(&n, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-		printf("============im here============\n");
+		free(seq2);
+		printf("============Proc[1] finished portion============\n");
 	}
+	free(seq1);
     }
     
     MPI_Finalize();
@@ -211,11 +211,13 @@ void calc_best_score(char* seq1, char* seq2, float* weights,int* best_offset, fl
 	*best_score = 0;
 	//printf("offset = %d\n", offset);
 	for(i = 0; i <= offset; i++){
-		tmp_score = calc_score(calc_similarity(seq1, seq2, i), strlen(seq2), &weights[0]);
+		char* similarity = calc_similarity(seq1, seq2, i);
+		tmp_score = calc_score(similarity, strlen(seq2), &weights[0]);
 		if(tmp_score > *best_score){
 			*best_score = tmp_score;
 			*best_offset = i;
 		}
+		free(similarity);
 	}
 	//printf("Best offset is: %d\n", *best_offset);
 	
