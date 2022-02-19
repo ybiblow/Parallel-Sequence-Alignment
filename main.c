@@ -116,15 +116,14 @@ int main(int argc, char *argv[]) {
 		}
 		MPI_Recv(&score, 1, MPI_FLOAT, 1, 0, MPI_COMM_WORLD, &status);
 		MPI_Recv(&offset, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &status);
-		MPI_Recv(&m, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &status);
-		MPI_Recv(&n, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &status);
+		MPI_Recv(&tmp_m, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &status);
+		MPI_Recv(&tmp_n, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &status);
 		
 		if(score > best_score){
-			printf("proc[1] won!\n");
 			best_score = score;
 			best_offset = offset;
-			m = j;
-			n = k;
+			m = tmp_m;
+			n = tmp_n;
 		}		
 		writeToFile(output_file, output_file_name, m, n, best_offset, best_score);
 	}
@@ -291,7 +290,7 @@ int is_semi_conservative(char a, char b){
 
 char* get_Mutant(char* sequence,int len, int m, int n){
 	//printf("getting mutant (%d,%d) length = %d\n", m, n, len);	
-	int i, j = 0;
+	int i;
 	int f_index = m - 1;
 	int e_index = n - 1;
 	char* mutant = (char*)malloc((len - 1) * sizeof(char));	
