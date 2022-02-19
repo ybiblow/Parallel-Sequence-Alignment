@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
 		printf("\n");
 	}
 		
-	/* calculating the best score of seq2 */
+	/* calculating the best score of each mutant  in seq2 */
 	for(i = 0; i < num_of_seq2; i++){
 		int len = strlen(seq2[i]);
 		printf("i = %d\n", i);
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
 			int offset;
 			float score;
 			char* tmp_mutant = get_Mutant(seq2[i], len, mutants[j].m, mutants[j].n);
-			//printf("Mutant is = %s\n", tmp_mutant);
+			printf("j = %d, Mutant is = %s\n", j, tmp_mutant);
 			calc_best_score(seq1, tmp_mutant, weights, &offset, &score);
 			mutants[j].score = score;
 			mutants[j].offset = offset;
@@ -191,12 +191,28 @@ int is_semi_conservative(char a, char b){
 }
 
 char* get_Mutant(char* sequence,int len, int m, int n){
-	//printf("im here (%d,%d) length = %d\n", m, n, len);
+	//printf("getting mutant (%d,%d) length = %d\n", m, n, len);
+	
 	int i, j = 0;
 	int f_index = m - 1;
 	int e_index = n - 1;
 	char* mutant = (char*)malloc((len - 1) * sizeof(char));
-	//printf("== im here ==");
+	
+	#pragma omp parallel for shared(f_index, e_index, mutant)
+	for(i = 0; i < len; i++){
+		if(i < f_index)
+			mutant[i] = sequence[i];
+		else if(i > f_index && i < e_index)
+			mutant[i - 1] = sequence[i];
+		else if(i > e_index)
+			mutant[i - 2] = sequence[i];
+	}
+	mutant[len - 2] = '\0';
+	
+	//printf("mutant length = %d\n", (int)strlen(mutant));
+	//printf("mutant after parallel = %s\n", mutant);
+	
+	/*
 	for(i = 0; i < len; i++){
 		if(i != f_index && i != e_index){
 			mutant[j] = sequence[i];
@@ -204,6 +220,9 @@ char* get_Mutant(char* sequence,int len, int m, int n){
 		}
 	}
 	mutant[j] = '\0';
+	printf("mutant after sequential = %s\n", mutant);*/
+	
 	//printf("len = %d, j =%d, mutant len = %d\n", len, j, (int)strlen(mutant));
+	
 	return mutant;
 }
