@@ -39,3 +39,11 @@ char** readFromFile(char* file_name, float *weights, char* seq1, int* num_of_seq
 	fclose(file);	
 	return seq2;
 }
+
+void writeToFile(FILE* file, char* file_name, int m, int n, int offset, float score){
+	if(file == NULL){
+		printf("writeToFile() - file is NULL\n");
+		exit(1);
+	}
+		fprintf(file, "MS(%d,%d), Offset = %d, Score = %1.2f\n",m ,n, offset, score);
+}
