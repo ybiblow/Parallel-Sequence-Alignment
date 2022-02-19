@@ -50,6 +50,7 @@ int main(int argc, char *argv[]) {
 	/* calculate number of mutants and create mutants array */
 	int counter = 0;
 	int num_of_mutants = (strlen(seq2[0]) * (strlen(seq2[0]) - 1)) / 2;
+	printf("number of mutants = %d\n", num_of_mutants);
 	mutant mutants[num_of_mutants];
 	for(i = 1; i < strlen(seq2[0]); i++){
 		for(j = i+1; j < strlen(seq2[0]) + 1; j++){
@@ -69,7 +70,7 @@ int main(int argc, char *argv[]) {
 			int offset;
 			float score;
 			char* tmp_mutant = get_Mutant(seq2[i], len, mutants[j].m, mutants[j].n);
-			printf("Mutant is = %s\n", tmp_mutant);
+			//printf("Mutant is = %s\n", tmp_mutant);
 			calc_best_score(seq1, tmp_mutant, weights, &offset, &score);
 			mutants[j].score = score;
 			mutants[j].offset = offset;
@@ -110,7 +111,7 @@ void calc_best_score(char* seq1, char* seq2, float* weights,int* best_offset, fl
 	int offset = strlen(seq1) - strlen(seq2);
 	int tmp_score;
 	*best_score = 0;
-	printf("offset = %d\n", offset);
+	//printf("offset = %d\n", offset);
 	for(i = 0; i <= offset; i++){
 		tmp_score = calc_score(calc_similarity(seq1, seq2, i), strlen(seq2), weights);
 		if(tmp_score > *best_score){
@@ -118,7 +119,7 @@ void calc_best_score(char* seq1, char* seq2, float* weights,int* best_offset, fl
 			*best_offset = i;
 		}
 	}
-	printf("Best offset is: %d\n", *best_offset);
+	//printf("Best offset is: %d\n", *best_offset);
 	
 }
 
@@ -190,10 +191,12 @@ int is_semi_conservative(char a, char b){
 }
 
 char* get_Mutant(char* sequence,int len, int m, int n){
+	//printf("im here (%d,%d) length = %d\n", m, n, len);
 	int i, j = 0;
 	int f_index = m - 1;
 	int e_index = n - 1;
-	char* mutant = (char*)malloc((len-2) * sizeof(char));
+	char* mutant = (char*)malloc((len - 1) * sizeof(char));
+	//printf("== im here ==");
 	for(i = 0; i < len; i++){
 		if(i != f_index && i != e_index){
 			mutant[j] = sequence[i];
@@ -201,6 +204,6 @@ char* get_Mutant(char* sequence,int len, int m, int n){
 		}
 	}
 	mutant[j] = '\0';
-	printf("len = %d, j =%d, mutant len = %d\n", len, j, (int)strlen(mutant));
+	//printf("len = %d, j =%d, mutant len = %d\n", len, j, (int)strlen(mutant));
 	return mutant;
 }
