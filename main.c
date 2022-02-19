@@ -25,13 +25,22 @@ typedef struct Mutant{
 
 int main(int argc, char *argv[]) {
     
-    int size, my_rank;
-    float weights[NUMBER_OF_WEIGHTS];
-    int *data;
-    MPI_Status  status;
+	int size, my_rank;
+	float weights[NUMBER_OF_WEIGHTS];
+	int *data;
+	int num_of_seq2;
+	int counter = 0;
+	int i, j, k, m, n, portion;
+	int offset;
+	float score;
+	int best_offset;
+	int best_score;
+	char seq1[5000];
+	int num_of_mutants;
+	MPI_Status  status;
 
-    MPI_Init(&argc, &argv);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+	MPI_Init(&argc, &argv);
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
     if (size != 2) {
        printf("Run the example with two processes only\n");
        MPI_Abort(MPI_COMM_WORLD, __LINE__);
@@ -43,16 +52,9 @@ int main(int argc, char *argv[]) {
 	/* setting variables to read from input file */
 	char* input_file_name = (char*)INPUT_FILE_NAME;
 	char* output_file_name = (char*)OUTPUT_FILE_NAME;
-	int num_of_seq2, i, j, k;
-	float weights[4];
-	char seq1[5000];
 	char** seq2 = readFromFile(input_file_name, &weights[0], &seq1[0], &num_of_seq2);
 	
 	/* calculate number of mutants and create mutants array */
-	int counter = 0;
-	int num_of_mutants = (strlen(seq2[0]) * (strlen(seq2[0]) - 1)) / 2;
-	printf("number of mutants = %d\n", num_of_mutants);
-	//mutant* mutants[num_of_seq2];
 	mutant** mutants = (mutant**)malloc(num_of_seq2 * sizeof(mutant*));
 	
 	FILE* output_file = fopen(output_file_name, "w");
@@ -60,56 +62,115 @@ int main(int argc, char *argv[]) {
 			printf("Error in opening the file\n");
 			exit(1);
 		}
-	int offset;
-	float score;
-	int best_offset = -1;
-	int best_score = -1;
+	best_offset = -1;
+	best_score = -1;
+	int length;
+	length = strlen(seq1);
+	
+	// send seq1 length
+	MPI_Send(&length, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
+	
+	// send seq1
+	MPI_Send(seq1, length, MPI_CHAR, 1, 0, MPI_COMM_WORLD);
+	
+	// send weights
+	MPI_Send(&weights[0], 4, MPI_FLOAT, 1, 0, MPI_COMM_WORLD);
+	
+	// send number of seq2
+	MPI_Send(&num_of_seq2, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
 	
 	for(i = 0; i < num_of_seq2; i++){
 		num_of_mutants = (strlen(seq2[i]) * (strlen(seq2[i]) - 1)) / 2;
-		printf("SEQ2 num = %d, num of mutants = %d\n", i, num_of_mutants);
-		fprintf(output_file, "SEQ2 num = %d, num of mutants = %d\n", i, num_of_mutants);
-		//mutants[i] = (mutant*)malloc(num_of_mutants * sizeof(mutant));
+		portion = num_of_mutants / 2;
+		printf("SEQ2_num = %d, num of mutants = %d, proc[0]_portion = %d\n", i, num_of_mutants, portion);
+		fprintf(output_file, "SEQ2_num = %d, num of mutants = %d\n", i, num_of_mutants);
 		counter = 0;
+		length = strlen(seq2[i]);
+		// send seq2 length
+		MPI_Send(&length, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
+		// send seq2
+		MPI_Send(seq2[i], strlen(seq2[i]), MPI_CHAR, 1, 0, MPI_COMM_WORLD);
+		// send num of mutants
+		MPI_Send(&num_of_mutants, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
 		for(j = 1; j < strlen(seq2[i]); j++){
 			for(k = j + 1; k < strlen(seq2[i]) + 1; k++){
-				//printf("(%d,%d) ", j, k);
-				//mutants[i][counter].m = j;
-				//mutants[i][counter].n = k;
-				//writeToFile(output_file, output_file_name, j, k);
-				//char* tmp_mutant = get_Mutant(seq2[i], strlen(seq2[i]), mutants[i][counter].m, mutants[i][counter].n);
+				offset = 0;
+				score = 0;
 				char* tmp_mutant = get_Mutant(seq2[i], strlen(seq2[i]), j, k);
-				//printf("SEQ2_%d, mutant_%d = %s\n", i, counter, tmp_mutant);
-
+				
 				/* calculating the best score of each mutant  in seq2 */
-				//calc_best_score(seq1, tmp_mutant, weights, &offset, &score);
 				calc_best_score(seq1, tmp_mutant, weights, &offset, &score);
-				writeToFile(output_file, output_file_name, j, k, offset, score);
-				//mutants[i][counter].score = score;
-				//mutants[i][counter].offset = offset;
+				if(score > best_score){
+					best_score = score;
+					best_offset = offset;
+					m = j;
+					n = k;
+				}				
 				counter++;
 				
 			}
-			//printf("\n");
 		}
+		writeToFile(output_file, output_file_name, m, n, best_offset, best_score);
 	}
 	fclose(output_file);
-	/*
-	for(i = 0; i < num_of_seq2; i++){
-		//printf("SEQ2_%d results:\n", i);
-		int len = strlen(seq2[i]);
-		num_of_mutants = len * (len -1) / 2;
-		for(j = 0; j < num_of_mutants; j++){
-			//printf("mutant (%d,%d) offset = %d score %f\n", mutants[i][j].m, mutants[i][j].n, mutants[i][j].offset, mutants[i][j].score);
-		}
-	}*/
-	
-	//for(i = 0; i < num_of_seq2; i++){
-		//free(mutants[i]);
-	//}
 	
     } else {
 	//printf("my rank is %d\n", my_rank);
+	char* seq1;
+	char* seq2;
+	int len;
+	
+	// get seq1
+	MPI_Recv(&len, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
+	seq1 = (char*)malloc(len * sizeof(char));
+	MPI_Recv(seq1, len, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status);
+	printf("seq1 = %s\n", seq1);
+	
+	// get weights
+	MPI_Recv(&weights[0], 4, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, &status);
+	printf("weights[1] = %1.3f\n", weights[1]);
+	
+	// get num of seq2
+	MPI_Recv(&num_of_seq2, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
+	printf("This is proc[1], num_of_seq2 = %d\n", num_of_seq2);
+	
+	for(i = 0; i < num_of_seq2; i++){
+		
+		// get current seq2
+		MPI_Recv(&len, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
+		seq2 = (char*)malloc(len * sizeof(char));
+		MPI_Recv(seq2, len, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status);
+		printf("%s\n", seq2);
+		
+		// get num of mutants in seq2
+		MPI_Recv(&num_of_mutants, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
+		printf("This is proc[1], SEQ2_%d, num_of_mutants = %d\n", i, num_of_mutants);
+		
+		portion = num_of_mutants / 2;
+		best_offset = -1;
+		best_score = -1;
+		counter = 0;
+		for(j = 1; j < len; j++){
+			for(k = j + 1; k < len + 1; k++){
+				if(counter >= portion){
+					offset = 0;
+					score = 0;
+					char* tmp_mutant = get_Mutant(seq2, len, j, k);
+					calc_best_score(seq1, tmp_mutant, weights, &offset, &score);
+					
+					if(score > best_score){
+						best_score = score;
+						best_offset = offset;
+						m = j;
+						n = k;
+					}
+				}
+				counter++;
+			}
+		}
+		// send the best MS(m,n) offset and score found back to proc[0]
+		
+	}
     }
     
     MPI_Finalize();
@@ -210,13 +271,11 @@ int is_semi_conservative(char a, char b){
 }
 
 char* get_Mutant(char* sequence,int len, int m, int n){
-	//printf("getting mutant (%d,%d) length = %d\n", m, n, len);
-	
+	//printf("getting mutant (%d,%d) length = %d\n", m, n, len);	
 	int i, j = 0;
 	int f_index = m - 1;
 	int e_index = n - 1;
-	char* mutant = (char*)malloc((len - 1) * sizeof(char));
-	
+	char* mutant = (char*)malloc((len - 1) * sizeof(char));	
 	#pragma omp parallel for shared(f_index, e_index, mutant)
 	for(i = 0; i < len; i++){
 		if(i < f_index)
@@ -226,22 +285,6 @@ char* get_Mutant(char* sequence,int len, int m, int n){
 		else if(i > e_index)
 			mutant[i - 2] = sequence[i];
 	}
-	mutant[len - 2] = '\0';
-	
-	//printf("mutant length = %d\n", (int)strlen(mutant));
-	//printf("mutant after parallel = %s\n", mutant);
-	
-	/*
-	for(i = 0; i < len; i++){
-		if(i != f_index && i != e_index){
-			mutant[j] = sequence[i];
-			j++;
-		}
-	}
-	mutant[j] = '\0';
-	printf("mutant after sequential = %s\n", mutant);*/
-	
-	//printf("len = %d, j =%d, mutant len = %d\n", len, j, (int)strlen(mutant));
-	
+	mutant[len - 2] = '\0';	
 	return mutant;
 }
