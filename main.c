@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
 	int offset;
 	float score;
 	int best_offset;
-	int best_score;
+	float best_score;
 	char seq1[5000];
 	int num_of_mutants;
 	MPI_Status  status;
@@ -67,6 +67,9 @@ int main(int argc, char *argv[]) {
 	int length;
 	length = strlen(seq1);
 	
+	int tmp_m;
+	int tmp_n;
+	
 	// send seq1 length
 	MPI_Send(&length, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
 	
@@ -94,22 +97,35 @@ int main(int argc, char *argv[]) {
 		MPI_Send(&num_of_mutants, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
 		for(j = 1; j < strlen(seq2[i]); j++){
 			for(k = j + 1; k < strlen(seq2[i]) + 1; k++){
-				offset = 0;
-				score = 0;
-				char* tmp_mutant = get_Mutant(seq2[i], strlen(seq2[i]), j, k);
-				
-				/* calculating the best score of each mutant  in seq2 */
-				calc_best_score(seq1, tmp_mutant, weights, &offset, &score);
-				if(score > best_score){
-					best_score = score;
-					best_offset = offset;
-					m = j;
-					n = k;
-				}				
-				counter++;
-				
+				if(counter < portion){
+					offset = 0;
+					score = 0;
+					char* tmp_mutant = get_Mutant(seq2[i], strlen(seq2[i]), j, k);
+					
+					/* calculating the best score of each mutant  in seq2 */
+					calc_best_score(seq1, tmp_mutant, weights, &offset, &score);
+					if(score > best_score){
+						best_score = score;
+						best_offset = offset;
+						m = j;
+						n = k;
+					}	
+				}
+				counter++;				
 			}
 		}
+		MPI_Recv(&score, 1, MPI_FLOAT, 1, 0, MPI_COMM_WORLD, &status);
+		MPI_Recv(&offset, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &status);
+		MPI_Recv(&m, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &status);
+		MPI_Recv(&n, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &status);
+		
+		if(score > best_score){
+			printf("proc[1] won!\n");
+			best_score = score;
+			best_offset = offset;
+			m = j;
+			n = k;
+		}		
 		writeToFile(output_file, output_file_name, m, n, best_offset, best_score);
 	}
 	fclose(output_file);
@@ -157,7 +173,6 @@ int main(int argc, char *argv[]) {
 					score = 0;
 					char* tmp_mutant = get_Mutant(seq2, len, j, k);
 					calc_best_score(seq1, tmp_mutant, weights, &offset, &score);
-					
 					if(score > best_score){
 						best_score = score;
 						best_offset = offset;
@@ -169,7 +184,11 @@ int main(int argc, char *argv[]) {
 			}
 		}
 		// send the best MS(m,n) offset and score found back to proc[0]
-		
+		MPI_Send(&best_score, 1, MPI_FLOAT, 0, 0, MPI_COMM_WORLD);
+		MPI_Send(&best_offset, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+		MPI_Send(&m, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+		MPI_Send(&n, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+		printf("============im here============\n");
 	}
     }
     
