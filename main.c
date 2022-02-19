@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
 			best_offset = offset;
 			m = tmp_m;
 			n = tmp_n;
-		}		
+		}
 		writeToFile(output_file, output_file_name, m, n, best_offset, best_score);
 	}
 	fclose(output_file);
