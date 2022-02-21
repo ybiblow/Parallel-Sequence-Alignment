@@ -10,18 +10,19 @@ __global__ void incrementByOne(int *arr, int numElements) {
         arr[i]++;
 }
 
-__global__ void get_Mutant_CUDA_Kernel(char *sequence, char* tmp_mutant, int len, int m, int n) {
+__global__ void get_Mutant_CUDA_Kernel(char *sequence, char* d_tmp_mutant, int len, int m, int n) {
 		int i = blockDim.x * blockIdx.x + threadIdx.x;
+		//char* tmp_mutant = (char*)malloc((len-2)*sizeof(char));
 		if (i < len){
 			if(i < (m - 1))
-				tmp_mutant[i] = sequence[i];
+				d_tmp_mutant[i] = sequence[i];
 			else if(i > (m - 1) && i < (n - 1))
-				tmp_mutant[i - 1] = sequence[i];
+				d_tmp_mutant[i - 1] = sequence[i];
 			else if(i > (n - 1))
-				tmp_mutant[i - 2] = sequence[i];
+				d_tmp_mutant[i - 2] = sequence[i];
 		}
-		if(i == len - 1)
-			tmp_mutant[i - 2] = '\0';
+		if(i == len)
+			d_tmp_mutant[i - 2] = '\0';
 			
     /*
 	//printf("getting mutant (%d,%d) length = %d\n", m, n, len);	
@@ -96,39 +97,38 @@ int computeOnGPU(int *data, int numElements) {
 }
 
 char* get_Mutant_CUDA(char* sequence,int len, int m, int n){
-	
+
+	char* mutant = (char*)malloc((len - 2) * sizeof(char));
 	// Error code to check return values for CUDA calls
 	cudaError_t err = cudaSuccess;
 
 	size_t size = len * sizeof(char);
-	char* mutant = (char*) malloc(size);
+  
 
 	// Allocate memory on GPU to copy the data from the host
-	char* *d_sequence;
-	err = cudaMalloc((void **)&d_sequence, size);
+	char* d_tmp_mutant;
+	err = cudaMalloc((void **)&d_tmp_mutant, (len - 2) * sizeof(char));      
 	if (err != cudaSuccess) {
 		fprintf(stderr, "Failed to allocate device memory - %s\n", cudaGetErrorString(err));
 		exit(EXIT_FAILURE);
 	}
-
-	size_t size_tmp_mutant = (len - 2) * sizeof(char);
-	char* *d_tmp_mutant;
-
+    
 	// Allocate memory on GPU to copy the data from the host
-	err = cudaMalloc((void **)&d_tmp_mutant, size_tmp_mutant);
+	char* d_sequence;
+	err = cudaMalloc((void **)&d_sequence, size);      
 	if (err != cudaSuccess) {
 		fprintf(stderr, "Failed to allocate device memory - %s\n", cudaGetErrorString(err));
 		exit(EXIT_FAILURE);
-	}
-	
+		}
+
 	// Copy data from host to the GPU memory
 	err = cudaMemcpy(d_sequence, sequence, size, cudaMemcpyHostToDevice);
 	if (err != cudaSuccess) {
 		fprintf(stderr, "Failed to copy data from host to device - %s\n", cudaGetErrorString(err));
 		exit(EXIT_FAILURE);
 	}
-	
-	
+
+
 	// Launch the Kernel
 	int threadsPerBlock = 256;
 	int blocksPerGrid =(len + threadsPerBlock - 1) / threadsPerBlock;
@@ -138,22 +138,27 @@ char* get_Mutant_CUDA(char* sequence,int len, int m, int n){
 		fprintf(stderr, "Failed to launch vectorAdd kernel -  %s\n", cudaGetErrorString(err));
 		exit(EXIT_FAILURE);
 	}
-	
-	
+
 	// Copy the  result from GPU to the host memory.
-	err = cudaMemcpy(mutant, d_sequence, size, cudaMemcpyDeviceToHost);
+	err = cudaMemcpy(mutant, d_tmp_mutant, (len - 2) * sizeof(char), cudaMemcpyDeviceToHost);
 	if (err != cudaSuccess) {
 		fprintf(stderr, "Failed to copy result array from device to host -%s\n", cudaGetErrorString(err));
 		exit(EXIT_FAILURE);
 	}
-	
-	
+
+	// Free allocated memory on GPU
+	if (cudaFree(d_tmp_mutant) != cudaSuccess) {
+		fprintf(stderr, "Failed to free device data - %s\n", cudaGetErrorString(err));
+		exit(EXIT_FAILURE);
+	}
+    
 	// Free allocated memory on GPU
 	if (cudaFree(d_sequence) != cudaSuccess) {
 		fprintf(stderr, "Failed to free device data - %s\n", cudaGetErrorString(err));
 		exit(EXIT_FAILURE);
 	}
-	//mutant[len] = '\0';
+	
+	//printf("%s\n%s\n",sequence, mutant);
+	
 	return mutant;
 }
-

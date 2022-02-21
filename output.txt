@@ -1,7 +1,7 @@
 SEQ2_num = 0, num of mutants = 1770
-MS(19,20), Offset = 430, Score = 54.00
+MS(2,7), Offset = 430, Score = 65.00
 SEQ2_num = 1, num of mutants = 1711
-MS(19,20), Offset = 430, Score = 54.00
+MS(2,7), Offset = 430, Score = 65.00
 SEQ2_num = 2, num of mutants = 1653
 MS(49,50), Offset = 363, Score = 75.00
 SEQ2_num = 3, num of mutants = 1540
