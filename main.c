@@ -49,6 +49,8 @@ int main(int argc, char *argv[]) {
     
     if (my_rank == 0) {
 	printf("my rank is %d and i'm currently reading from the file\n", my_rank);
+	double start_time, end_time;
+	start_time = MPI_Wtime();
 	/* setting variables to read from input file */
 	char* input_file_name = (char*)INPUT_FILE_NAME;
 	char* output_file_name = (char*)OUTPUT_FILE_NAME;
@@ -123,6 +125,8 @@ int main(int argc, char *argv[]) {
 		writeToFile(output_file, output_file_name, m, n, best_offset, best_score);
 		printf("finished finding best mutant for seq2_%d\n", i);
 	}
+	end_time = MPI_Wtime();
+	printf("Total Time: %1.4f\n", end_time - start_time);
 	fclose(output_file);
 	
     } else {
