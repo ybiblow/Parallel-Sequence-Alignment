@@ -13,3 +13,4 @@ void test(int *data, int n);
 int computeOnGPU(int *data, int n);
 char** readFromFile(char* file_name, float *weights, char* seq1, int* num_of_seq2);
 void writeToFile(FILE* file, char* file_name, int m, int n, int offset, float score);
+char* get_Mutant_CUDA(char* sequence,int len, int m, int n);

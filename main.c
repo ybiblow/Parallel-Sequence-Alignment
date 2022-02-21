@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
 				if(counter < portion){
 					offset = 0;
 					score = 0;
-					char* tmp_mutant = get_Mutant(seq2[i], strlen(seq2[i]), j, k);
+					char* tmp_mutant = get_Mutant_CUDA(seq2[i], strlen(seq2[i]), j, k);
 					
 					/* calculating the best score of each mutant  in seq2 */
 					calc_best_score(seq1, tmp_mutant, weights, &offset, &score);
