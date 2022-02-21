@@ -14,3 +14,7 @@ int computeOnGPU(int *data, int n);
 char** readFromFile(char* file_name, float *weights, char* seq1, int* num_of_seq2);
 void writeToFile(FILE* file, char* file_name, int m, int n, int offset, float score);
 char* get_Mutant_CUDA(char* sequence,int len, int m, int n);
+void calc_best_score_CUDA(char* seq1, char* mutant, float* weights,int* best_offset, float* best_score);
+char* calc_similarity_CUDA(char* seq1, char* mutant, int offset);
+float calc_score(char* arr, int size, float* weights);
+char find_similarity(char seq1_char, char seq2_char);

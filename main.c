@@ -6,13 +6,11 @@
 #include "myProto.h"
 
 char* calc_similarity(char* seq1, char* seq2, int offset);
-char find_similarity(char seq1_char, char seq2_char);
 void print_char_array(char* arr, int size);
 int is_identical(char a, char b);
 int is_conservative(char a, char b);
 int is_semi_conservative(char a, char b);
-void calc_best_score(char* seq1, char* seq2, float* weights,int* best_offset, float* best_score);
-float calc_score(char* arr, int size, float* weights);
+void calc_best_score(char* seq1, char* mutant, float* weights,int* best_offset, float* best_score);
 void calc_num_of_occurrences(char* arr, int size, int* counter, char chr);
 char* get_Mutant(char* sequence,int len, int m, int n);
 
@@ -94,12 +92,13 @@ int main(int argc, char *argv[]) {
 		for(j = 1; j < strlen(seq2[i]); j++){
 			for(k = j + 1; k < strlen(seq2[i]) + 1; k++){
 				if(counter < portion){
+					printf("(%d,%d)\n", counter, portion);
 					offset = 0;
 					score = 0;
 					char* tmp_mutant = get_Mutant_CUDA(seq2[i], strlen(seq2[i]), j, k);
 					
 					/* calculating the best score of each mutant  in seq2 */
-					calc_best_score(seq1, tmp_mutant, weights, &offset, &score);
+					calc_best_score_CUDA(seq1, tmp_mutant, weights, &offset, &score);
 					if(score > best_score){
 						best_score = score;
 						best_offset = offset;
@@ -208,15 +207,15 @@ void print_char_array(char* arr, int size){
 	printf("\n");	
 }
 
-void calc_best_score(char* seq1, char* seq2, float* weights,int* best_offset, float* best_score){
+void calc_best_score(char* seq1, char* mutant, float* weights,int* best_offset, float* best_score){
 	int i;
-	int offset = strlen(seq1) - strlen(seq2);
+	int offset = strlen(seq1) - strlen(mutant);
 	int tmp_score;
 	*best_score = 0;
 	//printf("offset = %d\n", offset);
 	for(i = 0; i <= offset; i++){
-		char* similarity = calc_similarity(seq1, seq2, i);
-		tmp_score = calc_score(similarity, strlen(seq2), &weights[0]);
+		char* similarity = calc_similarity(seq1, mutant, i);
+		tmp_score = calc_score(similarity, strlen(mutant), &weights[0]);
 		if(tmp_score > *best_score){
 			*best_score = tmp_score;
 			*best_offset = i;
