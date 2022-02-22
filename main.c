@@ -95,11 +95,9 @@ int main(int argc, char *argv[]) {
 					printf("(%d,%d)\n", counter, portion);
 					offset = 0;
 					score = 0;
-					char* tmp_mutant = get_Mutant_CUDA(seq2[i], strlen(seq2[i]), j, k);
-					
-					/* calculating the best score of each mutant  in seq2 */
-					calc_best_score_CUDA(seq1, tmp_mutant, weights, &offset, &score);
-									
+					char* tmp_mutant = get_Mutant_CUDA(seq2[i], strlen(seq2[i]), j, k);	// get the mutant with CUDA
+					calc_best_score_CUDA(seq1, tmp_mutant, weights, &offset, &score);	// get the best score and the best offset for the specific mutant
+					// check if the current mutant score is better than the once we found so far
 					if(score > best_score){
 						best_score = score;
 						best_offset = offset;
@@ -251,6 +249,7 @@ char* calc_similarity(char* seq1, char* seq2, int offset){
 	int i;
 	int seq2_len = strlen(seq2);
 	char* result = (char*)malloc(seq2_len * sizeof(char));
+	//#pragma omp parallel for shared(seq1, seq2, offset, result) num_threads(2)
 	for(i = 0; i < seq2_len; i++){
 		result[i] = find_similarity(seq1[i + offset], seq2[i]);
 	}
