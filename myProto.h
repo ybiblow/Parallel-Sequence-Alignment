@@ -18,3 +18,4 @@ void calc_best_score_CUDA(char* seq1, char* mutant, float* weights,int* best_off
 char* calc_similarity_CUDA(char* seq1, char* mutant, int offset);
 float calc_score(char* arr, int size, float* weights);
 char find_similarity(char seq1_char, char seq2_char);
+void calc_best_score_CUDA_1(char* seq1, char* mutant, float* weights,int* best_offset, float* best_score);
