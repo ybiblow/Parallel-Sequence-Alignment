@@ -98,9 +98,8 @@ int main(int argc, char *argv[]) {
 					char* tmp_mutant = get_Mutant_CUDA(seq2[i], strlen(seq2[i]), j, k);
 					
 					/* calculating the best score of each mutant  in seq2 */
-					//calc_best_score_CUDA(seq1, tmp_mutant, weights, &offset, &score);
-					calc_best_score_CUDA_1(seq1, tmp_mutant, weights, &offset, &score);
-										
+					calc_best_score_CUDA(seq1, tmp_mutant, weights, &offset, &score);
+									
 					if(score > best_score){
 						best_score = score;
 						best_offset = offset;
