@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 #define PART  100
-#define INPUT_FILE_NAME "input4.txt"
+#define INPUT_FILE_NAME "input.txt"
 #define OUTPUT_FILE_NAME "output.txt"
 #define SEQ1_LENGTH 5000
 #define SEQ2_LENGTH 3000
@@ -15,3 +15,4 @@ char* get_Mutant_CUDA(char* sequence,int len, int m, int n);
 float calc_score(char* arr, int size, float* weights);
 char find_similarity(char seq1_char, char seq2_char);
 void calc_best_score_CUDA(char* seq1, char* mutant, float* weights,int* best_offset, float* best_score);
+void calcPortion(int* portion, int num);

@@ -53,144 +53,38 @@ int main(int argc, char *argv[]) {
 	char* input_file_name = (char*)INPUT_FILE_NAME;
 	char* output_file_name = (char*)OUTPUT_FILE_NAME;
 	char** seq2 = readFromFile(input_file_name, &weights[0], &seq1[0], &num_of_seq2);
-	int length, tmp_m, tmp_n;
+	
 	FILE* output_file = fopen(output_file_name, "w");
-	if(output_file == NULL){
+		if(output_file == NULL){
 		printf("Error in opening the file\n");
 		exit(1);
 	}
+	// send proc[1] portion of seq2
+	int portion[2];
+	calcPortion(&portion[0], num_of_seq2);
+	printf("proc[0] portion = %d\n", portion[0]);
+	MPI_Send(&portion[1], 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
 	
-	best_offset = -1;
-	best_score = -1;
-	length = strlen(seq1);
 	
-	// send seq1 length
-	MPI_Send(&length, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
 	
-	// send seq1
-	MPI_Send(seq1, length, MPI_CHAR, 1, 0, MPI_COMM_WORLD);
+	int conservative_matrix_size = 26 * 26;
+	float conservative_matrix[conservative_matrix_size];
+	createConservativeMatrix(&conservative_matrix[0], conservative_matrix_size);
 	
-	// send weights
-	MPI_Send(&weights[0], 4, MPI_FLOAT, 1, 0, MPI_COMM_WORLD);
+	// calc best score, offset for a given seq2
+	//void calc_best_score_CUDA(char* seq1, char* mutant, float* weights, int* best_offset, float* best_score)
+	void calc_best_score_CUDA(&seq1[0], seq2[0], &weights[0]);
 	
-	// send number of seq2
-	MPI_Send(&num_of_seq2, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
-	
-	for(i = 0; i < num_of_seq2; i++){
-		num_of_mutants = (strlen(seq2[i]) * (strlen(seq2[i]) - 1)) / 2;
-		portion = num_of_mutants / 2;
-		printf("SEQ2_num = %d, num of mutants = %d, proc[0]_portion = %d\n", i, num_of_mutants, portion);
-		fprintf(output_file, "SEQ2_num = %d, num of mutants = %d\n", i, num_of_mutants);
-		counter = 0;
-		length = strlen(seq2[i]);
-		// send seq2 length
-		MPI_Send(&length, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
-		// send seq2
-		MPI_Send(seq2[i], strlen(seq2[i]), MPI_CHAR, 1, 0, MPI_COMM_WORLD);
-		// send num of mutants
-		MPI_Send(&num_of_mutants, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
-		for(j = 1; j < strlen(seq2[i]); j++){
-			for(k = j + 1; k < strlen(seq2[i]) + 1; k++){
-				if(counter < portion){
-					printf("(%d,%d)\n", counter, portion);
-					offset = 0;
-					score = 0;
-					char* tmp_mutant = get_Mutant_CUDA(seq2[i], strlen(seq2[i]), j, k);	// get the mutant with CUDA
-					calc_best_score_CUDA(seq1, tmp_mutant, weights, &offset, &score);	// get the best score and the best offset for the specific mutant
-					// check if the current mutant score is better than the once we found so far
-					if(score > best_score){
-						best_score = score;
-						best_offset = offset;
-						m = j;
-						n = k;
-					}
-					free(tmp_mutant);
-				}
-				counter++;				
-			}
-		}
-		MPI_Recv(&score, 1, MPI_FLOAT, 1, 0, MPI_COMM_WORLD, &status);
-		MPI_Recv(&offset, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &status);
-		MPI_Recv(&tmp_m, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &status);
-		MPI_Recv(&tmp_n, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &status);
-		
-		if(score > best_score){
-			best_score = score;
-			best_offset = offset;
-			m = tmp_m;
-			n = tmp_n;
-		}
-		writeToFile(output_file, output_file_name, m, n, best_offset, best_score);
-		printf("finished finding best mutant for seq2_%d\n", i);
-	}
 	end_time = MPI_Wtime();
 	printf("Total Time: %1.4f\n", end_time - start_time);
 	fclose(output_file);
 	
     } else {
-	//printf("my rank is %d\n", my_rank);
-	char* seq1;
-	char* seq2;
-	int len;
+	int portion;
+	MPI_Recv(&portion, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
+	printf("proc[1] portion = %d\n", portion);
+	char** seq2 = (char**)malloc(portion * sizeof(char*));
 	
-	// get seq1
-	MPI_Recv(&len, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
-	seq1 = (char*)malloc(len * sizeof(char));
-	MPI_Recv(seq1, len, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status);
-	printf("seq1 = %s\n", seq1);
-	
-	// get weights
-	MPI_Recv(&weights[0], 4, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, &status);
-	printf("weights[1] = %1.3f\n", weights[1]);
-	
-	// get num of seq2
-	MPI_Recv(&num_of_seq2, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
-	printf("This is proc[1], num_of_seq2 = %d\n", num_of_seq2);
-	
-	for(i = 0; i < num_of_seq2; i++){
-		
-		// get current seq2
-		MPI_Recv(&len, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
-		seq2 = (char*)malloc(len * sizeof(char));
-		MPI_Recv(seq2, len, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status);
-		printf("%s\n", seq2);
-		
-		// get num of mutants in seq2
-		MPI_Recv(&num_of_mutants, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
-		printf("This is proc[1], SEQ2_%d, num_of_mutants = %d\n", i, num_of_mutants);
-		
-		portion = num_of_mutants / 2;
-		best_offset = -1;
-		best_score = -1;
-		counter = 0;
-		for(j = 1; j < len; j++){
-			for(k = j + 1; k < len + 1; k++){
-				if(counter >= portion){
-					offset = 0;
-					score = 0;
-					char* tmp_mutant = get_Mutant(seq2, len, j, k);
-					calc_best_score(seq1, tmp_mutant, weights, &offset, &score);
-					if(score > best_score){
-						best_score = score;
-						best_offset = offset;
-						m = j;
-						n = k;
-					}
-					printf("seq2_%d, mutant number = %d out of %d\n", i, counter, num_of_mutants);
-					free(tmp_mutant);
-				}
-				counter++;
-			}
-		}
-		// send the best MS(m,n) offset and score found back to proc[0]
-		MPI_Send(&best_score, 1, MPI_FLOAT, 0, 0, MPI_COMM_WORLD);
-		MPI_Send(&best_offset, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-		MPI_Send(&m, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-		MPI_Send(&n, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-		free(seq2);
-		printf("============Proc[1] finished portion============\n");
-	}
-	free(seq1);
     }
     
     MPI_Finalize();
