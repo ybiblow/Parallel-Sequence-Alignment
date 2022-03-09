@@ -58,7 +58,8 @@ int main(int argc, char *argv[]) {
 	// calculating best score, offset for a given seq2
 	for(int i = 0; i < num_of_seq2; i++){
 		printf("calculating seq2_%d\n", i);
-		calc_best_score_CUDA(&seq1[0], seq2[i], comp_matrix);
+		char* final_result = calc_best_score_CUDA(&seq1[0], seq2[i], comp_matrix);
+		writeToFile(output_file, final_result);
 	}
 	
 	end_time = MPI_Wtime();

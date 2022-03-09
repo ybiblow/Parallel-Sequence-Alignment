@@ -238,7 +238,7 @@ __global__ void calcMutantBestScoreKernel(char* d_seq1, char* d_seq2, float* d_c
 	}
 }
 
-void calc_best_score_CUDA(char* seq1, char* seq2, float* comp_matrix){
+char* calc_best_score_CUDA(char* seq1, char* seq2, float* comp_matrix){
 	
 	int seq1_len = strlen(seq1);
 	int seq2_len = strlen(seq2);
@@ -292,8 +292,9 @@ void calc_best_score_CUDA(char* seq1, char* seq2, float* comp_matrix){
 	printf("mutant num: %d, MS(%d,%d), score: %1.2f, offset: %d\n", bestMutantNum, n, k, maxScore, bestOffset);
 	*/
 	
-	calcBestScoreOmp(mutantsBestScores, mutantsBestOffsets, num_of_mutants, seq2_len);
-	
+	char* final_result = calcBestScoreOmp(mutantsBestScores, mutantsBestOffsets, num_of_mutants, seq2_len);
+	printf("%s", final_result);
+	return final_result;	
 }
 
 

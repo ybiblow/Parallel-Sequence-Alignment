@@ -35,12 +35,12 @@ char** readFromFile(char* file_name, float *weights, char* seq1, int* num_of_seq
 	return seq2;
 }
 
-void writeToFile(FILE* file, char* file_name, int m, int n, int offset, float score){
+void writeToFile(FILE* file, char* final_result){
 	if(file == NULL){
 		printf("writeToFile() - file is NULL\n");
 		exit(1);
 	}
-		fprintf(file, "MS(%d,%d), Offset = %d, Score = %1.2f\n",m ,n, offset, score);
+		fprintf(file, "%s",final_result);
 }
 
 void calcPortion(int* portion, int num){
@@ -111,7 +111,7 @@ void CPUGetNK(int mutant_num, int seq2_len, int* n, int* k){
 	*k = i + mutant_num;
 }
 
-void calcBestScoreOmp(float* mutantsBestScores, int* mutantsBestOffsets, int num_mutants, int seq2_len){
+char* calcBestScoreOmp(float* mutantsBestScores, int* mutantsBestOffsets, int num_mutants, int seq2_len){
 	float sscore[4] = {-100000, -100000, -100000, -100000};
 	int ooffset[4];
 	int mmutant[4];
@@ -129,9 +129,11 @@ void calcBestScoreOmp(float* mutantsBestScores, int* mutantsBestOffsets, int num
 	//printf("score = %1.2f, offset = %d, mutant_num = %d\n", sscore[1], ooffset[1], mmutant[1]);
 	//printf("score = %1.2f, offset = %d, mutant_num = %d\n", sscore[2], ooffset[2], mmutant[2]);
 	//printf("score = %1.2f, offset = %d, mutant_num = %d\n", sscore[3], ooffset[3], mmutant[3]);
+
 	float best_score = -100000;
 	int best_offset;
 	int mutant_num;
+
 	for(int i = 0; i < 4; i++){
 		if(sscore[i] > best_score){
 			best_score = sscore[i];
@@ -141,6 +143,10 @@ void calcBestScoreOmp(float* mutantsBestScores, int* mutantsBestOffsets, int num
 	}
 	int n,k;
 	CPUGetNK(mutant_num + 1, seq2_len, &n, &k);
-	//printf("best score = %1.2f, best offset = %d, mutant num = %d\n", best_score, best_offset, mutant_num);
-	printf("mutant num: %d, MS(%d,%d), score: %1.2f, offset: %d\n", mutant_num, n, k, best_score, best_offset);
+	//printf("mutant num: %d, MS(%d,%d), score: %1.2f, offset: %d\n", mutant_num, n, k, best_score, best_offset);
+	char* final_result;// = (char*)malloc(100 * sizeof(char));
+	asprintf(&final_result, "mutant num: %d, MS(%d,%d), score: %1.2f, offset: %d\n", mutant_num, n, k, best_score, best_offset);
+	//printf("%s", final_result);
+	
+	return final_result;
 }

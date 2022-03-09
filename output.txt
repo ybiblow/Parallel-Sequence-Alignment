@@ -1,0 +1,5 @@
+mutant num: 8022, MS(85,86), score: 272.00, offset: 363
+mutant num: 195976, MS(177,178), score: 2383.50, offset: 128
+mutant num: 206, MS(1,208), score: 340.00, offset: 858
+mutant num: 56680, MS(209,210), score: 750.00, offset: 975
+mutant num: 1, MS(1,3), score: 6.00, offset: 1426
