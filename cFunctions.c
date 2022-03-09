@@ -48,12 +48,48 @@ void calcPortion(int* portion, int num){
 	portion[1] = (num % 2 != 0) ? portion[1] = num / 2 + 1 : portion[1] = num / 2;
 }
 
-void createConservativeMatrix(float* arr, int size){
+void createCompMatrix(float* arr, int size, float* weights){
+	//printf("Comp Matrix is:\n");
 	for(int i = 0; i < 26; i++){
 		for(int j = 0; j < 26; j++){
-			conservative_matrix[i * 26 + j] = findSimilarityWeight(i + 'A', j + 'A', &weights[0]);
-			//printf("%1.2f ", conservative_matrix[i * 26 + j]);
+			arr[i * 26 + j] = findSimilarityWeight(i + 'A', j + 'A', &weights[0]);
+			//printf("%1.2f ", arr[i * 26 + j]);
 		}
 		//printf("\n");
 	}
+}
+
+float findSimilarityWeight(char a, char b, float* weights){
+    if (isIdentical(a, b))
+        return weights[0];
+    else if(is_conservative(a, b))
+        return -weights[1];
+    else if(is_semi_conservative(a, b))
+        return -weights[2];
+    else
+        return -weights[3];
+}
+
+int isIdentical(char a, char b){
+    if(a == b)
+        return 1;
+    return 0;
+}
+
+int is_conservative(char a, char b){
+    const char* conservative_groups[9] = {"NDEQ", "NEQK", "STA", "MILV", "QHRK", "NHQK", "FYW", "HY", "MILF"};
+	for(int i = 0; i < 9; i++){
+		if(strchr((char*)conservative_groups[i], a) && strchr((char*)conservative_groups[i], b))
+			return 1;
+	}
+	return 0;
+}
+
+int is_semi_conservative(char a, char b){
+    const char* semi_conservative_groups[11] = {"SAG", "ATV", "CSA", "SGND", "STPA", "STNK", "NEQHRK", "NDEQHK", "SNDEQK", "HFY", "FVLIM"};
+	for(int i = 0; i < 11; i++){
+		if(strchr((char*)semi_conservative_groups[i], a) && strchr((char*)semi_conservative_groups[i], b))
+			return 1;
+	}
+	return 0;
 }

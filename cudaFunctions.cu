@@ -2,6 +2,21 @@
 #include <helper_cuda.h>
 #include "myProto.h"
 
+#define CUDA_ERR_CHECK(err,msg) {if (err != cudaSuccess) {fprintf(stderr, msg " - %s\n", cudaGetErrorString(err));exit(EXIT_FAILURE);}}
+
+#define CUDA_MEM_INIT(d_pointer, size, type) {cudaError_t err = cudaSuccess;\
+					size_t arrSize = size * sizeof(type);\
+				err = cudaMalloc((void**)&d_pointer, arrSize);\
+			CUDA_ERR_CHECK(err, "Failed to allocate device memory");}
+	
+#define CUDA_MEM_INIT_COPY(dest, src, size, type) {\
+			cudaError_t err = cudaSuccess;\
+		size_t  arrSize = size * sizeof(type);\
+		err = cudaMalloc((void**)&dest, arrSize);\
+CUDA_ERR_CHECK(err, "Failed to allocate device memory");\
+err = cudaMemcpy(dest, src, arrSize, cudaMemcpyHostToDevice);\
+CUDA_ERR_CHECK(err, "Failed to copy data from host to device"); }
+
 __device__ int strchr_CUDA(char* arr, char a){
 	for(;;arr++){
 		if(*arr == a)
@@ -167,6 +182,33 @@ char* get_Mutant_CUDA(char* sequence,int len, int m, int n){
 	return mutant;
 }
 
-char* calc_best_score_CUDA(char* seq1, char* seq2, float* weights){
+void calc_best_score_CUDA(char* seq1, char* seq2, float* comp_matrix){
 	
+	cudaError_t err = cudaSuccess;
+	
+	int seq1_len = strlen(seq1);
+	int seq2_len = strlen(seq2);
+	
+	// calc maxmimum offset and number of mutants
+	int maxOffset = seq1_len - (seq2_len - 2) + 1;
+	int num_of_mutants = seq2_len * (seq2_len - 1) / 2;
+	
+	// allocate memory for 2 vectors
+	float* mutantsBestScores = (float*) malloc(num_of_mutants * sizeof(float));
+	int* mutantsBestOffsets = (int*) malloc(num_of_mutants * sizeof(int));
+	
+	// allocate d_seq1, d_seq2, d_comp_matrix memory and copy data to device
+	char* d_seq1 = NULL;
+	char* d_seq2 = NULL;
+	float* d_comp_matrix = NULL;
+	CUDA_MEM_INIT_COPY(d_seq1, seq1, seq1_len, char);
+	CUDA_MEM_INIT_COPY(d_seq2, seq2, seq2_len, char);
+	CUDA_MEM_INIT_COPY(d_comp_matrix, comp_matrix, SIZE_OF_COMP_MATRIX, float);
+	
+	// allocate memory for d_mutantsBestScores & d_mutantsBestOffsets
+	float* d_mutantsBestScores = NULL; 
+	CUDA_MEM_INIT(d_mutantsBestScores, num_of_mutants, float);
+	
+	int* d_mutantsBestOffsets = NULL;
+	CUDA_MEM_INIT(d_mutantsBestOffsets, num_of_mutants, int);
 }
