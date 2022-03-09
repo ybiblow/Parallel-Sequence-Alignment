@@ -11,4 +11,4 @@ run:
 	mpiexec -np 2 ./finalProject
 
 runOn2:
-	mpiexec -np 2 -machinefile  mf  -map-by  node  ./finalProject
+	mpiexec -np 2 -machinefile  myHosts  -map-by  node  ./finalProject
