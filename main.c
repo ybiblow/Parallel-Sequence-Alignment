@@ -8,15 +8,8 @@ int main(int argc, char *argv[]) {
     
 	int size, my_rank;
 	float weights[NUMBER_OF_WEIGHTS];
-	int *data;
 	int num_of_seq2;
-	int counter = 0;
-	int i, j, k, m, n, portion;
-	int offset;
-	float score;
-	int best_offset;
-	float best_score;
-	char seq1[5000];
+	char seq1[SEQ1_LENGTH];
 	int num_of_mutants;
 	MPI_Status  status;
 
@@ -55,6 +48,13 @@ int main(int argc, char *argv[]) {
 	float comp_matrix[SIZE_OF_COMP_MATRIX];
 	createCompMatrix(&comp_matrix[0], SIZE_OF_COMP_MATRIX, &weights[0]);
 	
+	// sending seq2 portion to proc[1]
+	for(int i = portion[0]; i < num_of_seq2; i++){
+		int len = strlen(seq2[i]);
+		MPI_Send(&len, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
+		MPI_Send(seq2[i], len, MPI_CHAR, 1, 0, MPI_COMM_WORLD);
+	}
+	
 	// calculating best score, offset for a given seq2
 	for(int i = 0; i < num_of_seq2; i++){
 		printf("calculating seq2_%d\n", i);
@@ -69,9 +69,25 @@ int main(int argc, char *argv[]) {
     } else {
 	int portion;
 	MPI_Recv(&portion, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
-	//printf("proc[1] portion = %d\n", portion);
-	//char** seq2 = (char**)malloc(portion * sizeof(char*));
+	printf("proc[1] portion = %d\n", portion);
+	char** seq2 = (char**)malloc(portion * sizeof(char*));
 	
+	for(int i = 0; i < portion; i++){
+		int tmp_length;
+		MPI_Recv(&tmp_length, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
+		char* tmp = (char*)malloc(tmp_length * sizeof(char));
+		MPI_Recv(tmp, tmp_length, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status);
+		seq2[i] = tmp;
+	}
+	
+	for(int i = 0; i < portion; i++){
+		
+	}
+	
+	for(int i = 0; i < portion; i++){
+		free(seq2[i]);
+	}
+	free(seq2);
     }
     
     MPI_Finalize();
