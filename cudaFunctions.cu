@@ -182,9 +182,63 @@ char* get_Mutant_CUDA(char* sequence,int len, int m, int n){
 	return mutant;
 }
 
-void calc_best_score_CUDA(char* seq1, char* seq2, float* comp_matrix){
+__device__ void CUDAGetNK(int mutant_num, int seq2_len, int* n, int* k)
+{
+	int i;
+	int num_of_mutants_in_row = seq2_len;
+
+	for(i = 1; i < seq2_len; i++){
+		if(mutant_num - (num_of_mutants_in_row - 1) > 0){
+		    mutant_num -= (num_of_mutants_in_row - 1);
+		    num_of_mutants_in_row--;
+		}else{
+		    break;
+		}
+	}
 	
-	cudaError_t err = cudaSuccess;
+	*n = i;	
+	*k = i + mutant_num;
+}
+
+__device__ float calcMutantScore(char* seq1, char* seq2, float* d_conservative_matrix,int len2, int n, int k, int index, int offset)
+{
+	float score = 0;
+	int i = 0, j = i;
+	for (i = 0; i < len2 - 2; i++, j++)
+	{
+		if (j == n || j == k) 
+			j++;
+		float tmp_score = d_conservative_matrix[(seq1[i] - 'A') * 26 + (seq2[j] - 'A')];
+		score += tmp_score;
+	}	
+
+	return score;	
+}
+
+__global__ void calcMutantBestScoreKernel(char* d_seq1, char* d_seq2, float* d_comp_matrix, float* d_mutantsBestScores, int* d_mutantsBestOffsets, int num_mutants, int maxOffset, int len2)
+{
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	int n,k;
+	float bestScore = -10000;
+	int offset = 0;
+	CUDAGetNK(i+1, len2, &n, &k);
+	if (i < num_mutants)
+	{
+		for (int j = 0; j < maxOffset; j++)
+		{
+			float score = calcMutantScore(&d_seq1[j], d_seq2, d_comp_matrix, len2, n, k, i, j);
+			if (score > bestScore)
+			{
+				bestScore = score;
+				offset = j;	
+			}
+		}
+		d_mutantsBestScores[i]	= bestScore;
+		d_mutantsBestOffsets[i] = offset;
+	}
+}
+
+void calc_best_score_CUDA(char* seq1, char* seq2, float* comp_matrix){
 	
 	int seq1_len = strlen(seq1);
 	int seq2_len = strlen(seq2);
@@ -207,8 +261,33 @@ void calc_best_score_CUDA(char* seq1, char* seq2, float* comp_matrix){
 	
 	// allocate memory for d_mutantsBestScores & d_mutantsBestOffsets
 	float* d_mutantsBestScores = NULL; 
-	CUDA_MEM_INIT(d_mutantsBestScores, num_of_mutants, float);
-	
 	int* d_mutantsBestOffsets = NULL;
+	CUDA_MEM_INIT(d_mutantsBestScores, num_of_mutants, float);
 	CUDA_MEM_INIT(d_mutantsBestOffsets, num_of_mutants, int);
+	
+	int threads = 256;
+	int blocks = (num_of_mutants + threads - 1) / threads;
+	
+	calcMutantBestScoreKernel<<<blocks, threads>>>(d_seq1, d_seq2, d_comp_matrix, d_mutantsBestScores, d_mutantsBestOffsets, num_of_mutants, maxOffset, seq2_len);
+	
+	cudaMemcpy(mutantsBestScores, d_mutantsBestScores, num_of_mutants * sizeof(float), cudaMemcpyDeviceToHost);
+	cudaMemcpy(mutantsBestOffsets, d_mutantsBestOffsets, num_of_mutants * sizeof(int), cudaMemcpyDeviceToHost);
+	
+	float maxScore = -10000;
+	int bestOffset = 0;
+	int bestMutantNum = -1;
+	
+	for (int i = 0; i < num_of_mutants; i++)
+	{
+		if (mutantsBestScores[i] > maxScore)
+		{
+			maxScore = mutantsBestScores[i];
+			bestOffset = mutantsBestOffsets[i];
+			bestMutantNum = i;
+		}
+	}
+	int n,k;
+	CPUGetNK(bestMutantNum + 1, seq2_len, &n, &k);
+	printf("mutant num: %d, MS(%d,%d), score: %1.2f, offset: %d\n", bestMutantNum, n, k, maxScore, bestOffset);
+	
 }

@@ -93,3 +93,20 @@ int is_semi_conservative(char a, char b){
 	}
 	return 0;
 }
+
+void CPUGetNK(int mutant_num, int seq2_len, int* n, int* k){
+	int i;
+	int num_of_mutants_in_row = seq2_len;
+
+	for(i = 1; i < seq2_len; i++){
+		if(mutant_num - (num_of_mutants_in_row - 1) > 0){
+		    mutant_num -= (num_of_mutants_in_row - 1);
+		    num_of_mutants_in_row--;
+		}else{
+		    break;
+		}
+	}
+	
+	*n = i;	
+	*k = i + mutant_num;
+}

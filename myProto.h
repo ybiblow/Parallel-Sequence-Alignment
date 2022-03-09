@@ -23,6 +23,7 @@ float findSimilarityWeight(char a, char b, float* weights);
 int isIdentical(char a, char b);
 int is_conservative(char a, char b);
 int is_semi_conservative(char a, char b);
+void CPUGetNK(int mutant_num, int seq2_len, int* n, int* k);
 
 
 char* calc_similarity(char* seq1, char* seq2, int offset);
