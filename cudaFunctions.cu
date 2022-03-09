@@ -243,6 +243,9 @@ char* calc_best_score_CUDA(char* seq1, char* seq2, float* comp_matrix){
 	int seq1_len = strlen(seq1);
 	int seq2_len = strlen(seq2);
 	
+	//printf("seq1_len = %d, seq2_len = %d\n", seq1_len, seq2_len);
+	//printf("seq2 = %s\n", seq2);
+	
 	// calc maxmimum offset and number of mutants
 	int maxOffset = seq1_len - (seq2_len - 2) + 1;
 	int num_of_mutants = seq2_len * (seq2_len - 1) / 2;
@@ -272,7 +275,9 @@ char* calc_best_score_CUDA(char* seq1, char* seq2, float* comp_matrix){
 	
 	cudaMemcpy(mutantsBestScores, d_mutantsBestScores, num_of_mutants * sizeof(float), cudaMemcpyDeviceToHost);
 	cudaMemcpy(mutantsBestOffsets, d_mutantsBestOffsets, num_of_mutants * sizeof(int), cudaMemcpyDeviceToHost);
-	
+	for(int i = 0; i < num_of_mutants; i++){
+		//printf("i = %d, score = %1.2f\n", i, mutantsBestScores[i]);
+	}
 	/*
 	float maxScore = -10000;
 	int bestOffset = 0;
