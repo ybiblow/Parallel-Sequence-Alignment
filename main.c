@@ -65,12 +65,12 @@ int main(int argc, char *argv[]) {
 	
 	// calculating best score, offset for a given seq2
 	for(int i = 0; i < portion[0]; i++){
-		printf("proc[0] calculating seq2_%d\n", i);
-		char* final_result = calc_best_score_CUDA(&seq1[0], seq2[i], comp_matrix);
-		writeToFile(output_file, final_result);
-		free(final_result);
+		//printf("proc[0] calculating seq2_%d\n", i);
+		//char* final_result = calc_best_score_CUDA(&seq1[0], seq2[i], comp_matrix);
+		//writeToFile(output_file, final_result);
+		//free(final_result);
 	}
-	
+	printf("Reading sent info from proc[1]\n");
 	for(int i = 0; i < portion[1]; i++){
 		int tmp_length;
 		char* tmp;
@@ -114,11 +114,10 @@ int main(int argc, char *argv[]) {
 	createCompMatrix(&comp_matrix[0], SIZE_OF_COMP_MATRIX, &weights[0]);
 	// calc
 	for(int i = 0; i < portion; i++){
-		printf("proc[1] calculating seq2_%d\n", i);
 		char* final_result = calc_best_score_CUDA(&seq1[0], seq2[i], comp_matrix);
 		int final_result_length = strlen(final_result);
 		MPI_Send(&final_result_length, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-		MPI_Send(&final_result, final_result_length, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
+		MPI_Send(&final_result[0], final_result_length, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
 		free(final_result);
 	}
 	
