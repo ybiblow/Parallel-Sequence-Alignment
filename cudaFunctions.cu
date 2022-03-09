@@ -298,7 +298,7 @@ char* calc_best_score_CUDA(char* seq1, char* seq2, float* comp_matrix){
 	*/
 	
 	char* final_result = calcBestScoreOmp(mutantsBestScores, mutantsBestOffsets, num_of_mutants, seq2_len);
-	printf("%s", final_result);
+	//printf("%s", final_result);
 	return final_result;	
 }
 

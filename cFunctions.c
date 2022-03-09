@@ -145,7 +145,8 @@ char* calcBestScoreOmp(float* mutantsBestScores, int* mutantsBestOffsets, int nu
 	CPUGetNK(mutant_num + 1, seq2_len, &n, &k);
 	//printf("mutant num: %d, MS(%d,%d), score: %1.2f, offset: %d\n", mutant_num, n, k, best_score, best_offset);
 	char* final_result;// = (char*)malloc(100 * sizeof(char));
-	asprintf(&final_result, "mutant num: %d, MS(%d,%d), score: %1.2f, offset: %d\n", mutant_num, n, k, best_score, best_offset);
+	char a = '\0';
+	asprintf(&final_result, "mutant num: %d, MS(%d,%d), score: %1.2f, offset: %d\n%c", mutant_num, n, k, best_score, best_offset, a);
 	//printf("%s", final_result);
 	
 	return final_result;
