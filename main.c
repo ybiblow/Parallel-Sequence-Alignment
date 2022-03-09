@@ -70,16 +70,13 @@ int main(int argc, char *argv[]) {
 		writeToFile(output_file, final_result);
 		free(final_result);
 	}
-	printf("Reading sent info from proc[1]\n");
+	// recv results from proc[1]
 	for(int i = 0; i < portion[1]; i++){
-		printf("i = %d\n", i);
 		int tmp_length;
 		char* tmp;
 		MPI_Recv(&tmp_length, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &status);
 		tmp = (char*) malloc(tmp_length * sizeof(char));
 		MPI_Recv(tmp, tmp_length, MPI_CHAR, 1, 0, MPI_COMM_WORLD, &status);
-		printf("%s", tmp);
-		printf("=====\n");
 		writeToFile(output_file, tmp);
 		free(tmp);
 	}
@@ -119,10 +116,8 @@ int main(int argc, char *argv[]) {
 	for(int i = 0; i < portion; i++){
 		char* final_result = calc_best_score_CUDA(&seq1[0], seq2[i], comp_matrix);
 		int final_result_length = strlen(final_result) + 1;
-		//final_result[final_result_length] = '\0';
 		MPI_Send(&final_result_length, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
 		MPI_Send(&final_result[0], final_result_length, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
-		printf("sending: %s", final_result);
 		free(final_result);
 	}
 	
