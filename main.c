@@ -51,14 +51,15 @@ int main(int argc, char *argv[]) {
 	printf("proc[0] portion = %d\n", portion[0]);
 	MPI_Send(&portion[1], 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
 	
-	
-	
-	//int comp_matrix_size = 26 * 26;
+	// creating comp_matrix
 	float comp_matrix[SIZE_OF_COMP_MATRIX];
 	createCompMatrix(&comp_matrix[0], SIZE_OF_COMP_MATRIX, &weights[0]);
 	
-	// calc best score, offset for a given seq2
-	calc_best_score_CUDA(&seq1[0], seq2[0], comp_matrix);
+	// calculating best score, offset for a given seq2
+	for(int i = 0; i < num_of_seq2; i++){
+		printf("calculating seq2_%d\n", i);
+		calc_best_score_CUDA(&seq1[0], seq2[i], comp_matrix);
+	}
 	
 	end_time = MPI_Wtime();
 	printf("Total Time: %1.4f\n", end_time - start_time);

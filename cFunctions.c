@@ -110,3 +110,37 @@ void CPUGetNK(int mutant_num, int seq2_len, int* n, int* k){
 	*n = i;	
 	*k = i + mutant_num;
 }
+
+void calcBestScoreOmp(float* mutantsBestScores, int* mutantsBestOffsets, int num_mutants, int seq2_len){
+	float sscore[4] = {-100000, -100000, -100000, -100000};
+	int ooffset[4];
+	int mmutant[4];
+	#pragma omp parallel for
+	for(int i = 0; i < num_mutants; i++){
+		int tid = omp_get_thread_num();
+		if(mutantsBestScores[i] > sscore[tid]){
+			sscore[tid] = mutantsBestScores[i];
+			ooffset[tid] = mutantsBestOffsets[i];
+			mmutant[tid] = i;
+			
+		}
+	}
+	//printf("score = %1.2f, offset = %d, mutant_num = %d\n", sscore[0], ooffset[0], mmutant[0]);
+	//printf("score = %1.2f, offset = %d, mutant_num = %d\n", sscore[1], ooffset[1], mmutant[1]);
+	//printf("score = %1.2f, offset = %d, mutant_num = %d\n", sscore[2], ooffset[2], mmutant[2]);
+	//printf("score = %1.2f, offset = %d, mutant_num = %d\n", sscore[3], ooffset[3], mmutant[3]);
+	float best_score = -100000;
+	int best_offset;
+	int mutant_num;
+	for(int i = 0; i < 4; i++){
+		if(sscore[i] > best_score){
+			best_score = sscore[i];
+			best_offset = ooffset[i];
+			mutant_num = mmutant[i];
+		}
+	}
+	int n,k;
+	CPUGetNK(mutant_num + 1, seq2_len, &n, &k);
+	//printf("best score = %1.2f, best offset = %d, mutant num = %d\n", best_score, best_offset, mutant_num);
+	printf("mutant num: %d, MS(%d,%d), score: %1.2f, offset: %d\n", mutant_num, n, k, best_score, best_offset);
+}

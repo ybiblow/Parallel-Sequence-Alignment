@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "omp.h"
 
 #define PART  100
 #define INPUT_FILE_NAME "input.txt"
@@ -24,7 +25,7 @@ int isIdentical(char a, char b);
 int is_conservative(char a, char b);
 int is_semi_conservative(char a, char b);
 void CPUGetNK(int mutant_num, int seq2_len, int* n, int* k);
-
+void calcBestScoreOmp(float* mutantsBestScores, int* mutantsBestOffsets, int num_mutants, int seq2_len);
 
 char* calc_similarity(char* seq1, char* seq2, int offset);
 void print_char_array(char* arr, int size);
