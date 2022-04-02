@@ -202,16 +202,20 @@ __device__ void CUDAGetNK(int mutant_num, int seq2_len, int* n, int* k)
 
 __device__ float calcMutantScore(char* seq1, char* seq2, float* d_conservative_matrix,int len2, int n, int k, int index, int offset)
 {
+	n = n - 1;
+	k = k - 1;
 	float score = 0;
 	int i = 0, j = i;
 	for (i = 0; i < len2 - 2; i++, j++)
 	{
-		if (j == n || j == k) 
+		if(j == n)
+			j++;
+		if(j == k)
 			j++;
 		float tmp_score = d_conservative_matrix[(seq1[i] - 'A') * 26 + (seq2[j] - 'A')];
 		score += tmp_score;
 	}	
-
+	//printf("(%d,%d) %1.2f\n",n, k, score);
 	return score;	
 }
 
@@ -221,9 +225,10 @@ __global__ void calcMutantBestScoreKernel(char* d_seq1, char* d_seq2, float* d_c
 	int n,k;
 	float bestScore = -10000;
 	int offset = 0;
-	CUDAGetNK(i+1, len2, &n, &k);
 	if (i < num_mutants)
 	{
+		CUDAGetNK(i+1, len2, &n, &k);
+		//printf("i = %d, (%d,%d)\n", i, n, k);
 		for (int j = 0; j < maxOffset; j++)
 		{
 			float score = calcMutantScore(&d_seq1[j], d_seq2, d_comp_matrix, len2, n, k, i, j);
