@@ -1,0 +1,6 @@
+mutant num: 63, MS(2,7), score: 65.40, offset: 430
+mutant num: 1099, MS(24,43), score: 7.10, offset: 363
+mutant num: 1609, MS(49,51), score: 75.20, offset: 363
+mutant num: 1044, MS(25,26), score: 25.20, offset: 363
+mutant num: 144, MS(3,41), score: 15.10, offset: 374
+mutant num: 1228, MS(34,42), score: 5.00, offset: 367
