@@ -5,7 +5,7 @@
 #include "omp.h"
 
 #define PART  100
-#define INPUT_FILE_NAME "input3.txt"
+#define INPUT_FILE_NAME "input.txt"
 #define OUTPUT_FILE_NAME "output.txt"
 #define SEQ1_LENGTH 5000
 #define SEQ2_LENGTH 3000

@@ -200,8 +200,11 @@ __device__ void CUDAGetNK(int mutant_num, int seq2_len, int* n, int* k)
 	*k = i + mutant_num;
 }
 
+//	returns the score for a given mutant and offset, the func will compare 2 chars each loop, one from seq1 and another from seq2, it will skip the letters in indexes N and K,
+//	that will make the comparison of the two strings a comparison between seq2 and a mutant sequence(N,K)
 __device__ float calcMutantScore(char* seq1, char* seq2, float* d_conservative_matrix,int len2, int n, int k, int index, int offset)
 {
+	// N and K needs to be minus 1 because for thread i=0 we will get (N,K)=(1,2) and we don't want to skip 1,2 we want to skip indexes (0,1) therefore we subtract 1 from each
 	n = n - 1;
 	k = k - 1;
 	float score = 0;
@@ -209,16 +212,18 @@ __device__ float calcMutantScore(char* seq1, char* seq2, float* d_conservative_m
 	for (i = 0; i < len2 - 2; i++, j++)
 	{
 		if(j == n)
-			j++;
+			j++; // skipping the comparison with index n
 		if(j == k)
-			j++;
-		float tmp_score = d_conservative_matrix[(seq1[i] - 'A') * 26 + (seq2[j] - 'A')];
+			j++; // skipping the comparison with index k
+		float tmp_score = d_conservative_matrix[(seq1[i] - 'A') * 26 + (seq2[j] - 'A')]; // the comparison matrix is used here as a 2d array but in fact it is a 1d array
 		score += tmp_score;
 	}	
 	//printf("(%d,%d) %1.2f\n",n, k, score);
 	return score;	
 }
 
+//	each thread is responsible for a single mutant and calculates its best score and offset, example:
+//	thread i=0 will calculate the result for (N=1,K=2) and store the best score it could find in d_mutantsBestScores[0] and best offset it could find in d_mutantsBestOffsets[0]
 __global__ void calcMutantBestScoreKernel(char* d_seq1, char* d_seq2, float* d_comp_matrix, float* d_mutantsBestScores, int* d_mutantsBestOffsets, int num_mutants, int maxOffset, int len2)
 {
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -232,17 +237,26 @@ __global__ void calcMutantBestScoreKernel(char* d_seq1, char* d_seq2, float* d_c
 		for (int j = 0; j < maxOffset; j++)
 		{
 			float score = calcMutantScore(&d_seq1[j], d_seq2, d_comp_matrix, len2, n, k, i, j);
+			// asking if the score we found for the given (N,K) and offset is bigger than the best score we found so far
 			if (score > bestScore)
 			{
 				bestScore = score;
 				offset = j;	
 			}
 		}
+		// storing the final results in the 2 vectors
 		d_mutantsBestScores[i]	= bestScore;
 		d_mutantsBestOffsets[i] = offset;
 	}
 }
 
+/*
+	this function calculates the best scores and offsets for all the mutants, the result of those results will be in two vectors: mutantsBestScores, mutantsBestOffsets. the
+	length of those 2 vectors is the number of mutants for a given seq2.
+	this function uses CUDA to calculate the score and offset for each mutant and stores the results in the previously mentioned vectors.
+	later it uses OMP to get the best score, best offset and (N,K) for the given seq2.
+	return the string result that is to be printed.
+*/
 char* calc_best_score_CUDA(char* seq1, char* seq2, float* comp_matrix){
 	
 	int seq1_len = strlen(seq1);
@@ -255,7 +269,7 @@ char* calc_best_score_CUDA(char* seq1, char* seq2, float* comp_matrix){
 	int maxOffset = seq1_len - (seq2_len - 2) + 1;
 	int num_of_mutants = seq2_len * (seq2_len - 1) / 2;
 	
-	// allocate memory for 2 vectors
+	// allocate memory in CPU for 2 vectors
 	float* mutantsBestScores = (float*) malloc(num_of_mutants * sizeof(float));
 	int* mutantsBestOffsets = (int*) malloc(num_of_mutants * sizeof(int));
 	
@@ -267,7 +281,7 @@ char* calc_best_score_CUDA(char* seq1, char* seq2, float* comp_matrix){
 	CUDA_MEM_INIT_COPY(d_seq2, seq2, seq2_len, char);
 	CUDA_MEM_INIT_COPY(d_comp_matrix, comp_matrix, SIZE_OF_COMP_MATRIX, float);
 	
-	// allocate memory for d_mutantsBestScores & d_mutantsBestOffsets
+	// allocate memory for d_mutantsBestScores & d_mutantsBestOffsets and dont copy data! - the data will be filled in the device
 	float* d_mutantsBestScores = NULL; 
 	int* d_mutantsBestOffsets = NULL;
 	CUDA_MEM_INIT(d_mutantsBestScores, num_of_mutants, float);
@@ -302,11 +316,8 @@ char* calc_best_score_CUDA(char* seq1, char* seq2, float* comp_matrix){
 	printf("mutant num: %d, MS(%d,%d), score: %1.2f, offset: %d\n", bestMutantNum, n, k, maxScore, bestOffset);
 	*/
 	
+	// using OMP to get the best results	
 	char* final_result = calcBestScoreOmp(mutantsBestScores, mutantsBestOffsets, num_of_mutants, seq2_len);
 	printf("%s", final_result);
-	return final_result;	
+	return final_result;
 }
-
-
-
-

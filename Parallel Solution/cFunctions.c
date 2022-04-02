@@ -13,6 +13,7 @@ void test(int *data, int n) {
     printf("The test passed successfully\n"); 
 }
 
+// reading weights, seq1, seq2's and number of seq2's from the input file
 char** readFromFile(char* file_name, float *weights, char* seq1, int* num_of_seq2){
 	int i;
 	char** seq2;
@@ -35,6 +36,7 @@ char** readFromFile(char* file_name, float *weights, char* seq1, int* num_of_seq
 	return seq2;
 }
 
+// writing the results to the output file
 void writeToFile(FILE* file, char* final_result){
 	if(file == NULL){
 		printf("writeToFile() - file is NULL\n");
@@ -43,11 +45,13 @@ void writeToFile(FILE* file, char* final_result){
 		fprintf(file, "%s",final_result);
 }
 
+// calculates the portion for each process
 void calcPortion(int* portion, int num){
 	portion[0] = num /2;
 	portion[1] = (num % 2 != 0) ? portion[1] = num / 2 + 1 : portion[1] = num / 2;
 }
 
+// creating the comparison matrix, that will save us time later when calculating the score for each mutant
 void createCompMatrix(float* arr, int size, float* weights){
 	//printf("Comp Matrix is:\n");
 	for(int i = 0; i < 26; i++){
@@ -59,6 +63,7 @@ void createCompMatrix(float* arr, int size, float* weights){
 	}
 }
 
+// returns the score for 2 chars based on the similarity: identical, conservative and semi-conservative
 float findSimilarityWeight(char a, char b, float* weights){
     if (isIdentical(a, b))
         return weights[0];
@@ -94,6 +99,8 @@ int is_semi_conservative(char a, char b){
 	return 0;
 }
 
+// returns the N,K for a give mutant number, mutant number 0 will return (N = 1, K = 2)
+// this function uses the logic of a "upper triangular matrix" and finds the (N,K) for a given number between (1, seq2 length - 1)
 void CPUGetNK(int mutant_num, int seq2_len, int* n, int* k){
 	int i;
 	int num_of_mutants_in_row = seq2_len;
@@ -111,6 +118,7 @@ void CPUGetNK(int mutant_num, int seq2_len, int* n, int* k){
 	*k = i + mutant_num;
 }
 
+// using OMP this function gets the best score, offset and (N,K) for a given seq2, it builds the sting the is to be printed in the output file
 char* calcBestScoreOmp(float* mutantsBestScores, int* mutantsBestOffsets, int num_mutants, int seq2_len){
 	float sscore[4] = {-100000, -100000, -100000, -100000};
 	int ooffset[4];
